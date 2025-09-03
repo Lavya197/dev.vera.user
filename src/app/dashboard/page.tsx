@@ -12,6 +12,18 @@ type Buyer = {
   created_at: string;
 };
 
+type DetectedCode = {
+  rawValue: string;
+};
+
+declare global {
+  interface Window {
+    BarcodeDetector?: new (config: { formats: string[] }) => {
+      detect: (video: HTMLVideoElement) => Promise<DetectedCode[]>;
+    };
+  }
+}
+
 export default function Dashboard() {
   const [buyer, setBuyer] = useState<Buyer | null>(null);
   const [qrResult, setQrResult] = useState<string | null>(null);
@@ -29,12 +41,12 @@ export default function Dashboard() {
 
   const startScan = async () => {
     try {
-      if (!("BarcodeDetector" in window)) {
+      if (!window.BarcodeDetector) {
         alert("Barcode Detector is not supported in this browser.");
         return;
       }
 
-      const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
@@ -54,7 +66,7 @@ export default function Dashboard() {
 
         detector
           .detect(video)
-          .then((codes: any[]) => {
+          .then((codes: DetectedCode[]) => {   // ✅ typed instead of any
             if (codes.length > 0) {
               setQrResult(codes[0].rawValue);
               setScanning(false);
@@ -64,11 +76,11 @@ export default function Dashboard() {
               requestAnimationFrame(scanLoop);
             }
           })
-          .catch((err: unknown) => console.error(err));
+          .catch((err: unknown) => console.error(err));   // ✅ typed instead of any
       };
 
       requestAnimationFrame(scanLoop);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error starting scan:", err);
     }
   };
