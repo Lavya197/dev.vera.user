@@ -1,10 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "@/lib/supabase";
 
+type Buyer = {
+  id: number;
+  full_name: string;
+  email: string;
+  password: string;
+  wallet_pubkey: string | null;
+  status: string;
+  created_at: string;
+};
+
 type ResponseData = {
   success: boolean;
   message?: string;
-  buyer?: any;
+  buyer?: Buyer;
 };
 
 export default async function handler(
@@ -17,18 +27,16 @@ export default async function handler(
 
   const { email, password } = req.body;
 
-  // Fetch buyer by email
   const { data: buyer, error } = await supabase
     .from("buyers")
     .select("*")
     .eq("email", email)
-    .single();
+    .single<Buyer>();
 
   if (error || !buyer) {
     return res.status(401).json({ success: false, message: "Invalid email" });
   }
 
-  // Direct password check (since not hashed)
   if (buyer.password !== password) {
     return res.status(401).json({ success: false, message: "Invalid password" });
   }

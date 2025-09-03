@@ -1,17 +1,31 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+type Buyer = {
+  id: number;
+  full_name: string;
+  email: string;
+  password: string;
+  wallet_pubkey: string | null;
+  status: string;
+  created_at: string;
+};
 
 export default function Dashboard() {
-  const [buyer, setBuyer] = useState<any>(null);
+  const [buyer, setBuyer] = useState<Buyer | null>(null);
   const [qrResult, setQrResult] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const stored = localStorage.getItem("buyer");
-    if (stored) {
-      setBuyer(JSON.parse(stored));
+    if (!stored) {
+      router.push("/login");
+    } else {
+      setBuyer(JSON.parse(stored) as Buyer);
     }
-  }, []);
+  }, [router]);
 
   const startScan = async () => {
     try {
@@ -22,7 +36,10 @@ export default function Dashboard() {
 
       const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+
       const video = document.createElement("video");
       video.srcObject = stream;
       await video.play();
@@ -47,7 +64,7 @@ export default function Dashboard() {
               requestAnimationFrame(scanLoop);
             }
           })
-          .catch((err: any) => console.error(err));
+          .catch((err: unknown) => console.error(err));
       };
 
       requestAnimationFrame(scanLoop);
